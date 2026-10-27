@@ -54,6 +54,7 @@ COMP = "acompressor=threshold=-24dB:ratio=3:attack=5:release=120"
 TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{}?output_format=mp3_44100_192"
 TTS_CHUNK = 4000            # characters per request, whole paragraphs
 SNAP = 1.2                  # how far a paragraph start may move to reach a pause
+LATE = 0.3                  # how far after a pause Whisper may place a word's start
 SONG_GAP = 3.0              # a source silence this long is kept silent in the dub
 
 # profile.toml keys and their defaults
@@ -200,6 +201,15 @@ def pauses(wav, d):
     return list(zip(st, en))
 
 
+def snap(t, ps):
+    """Move a paragraph start found by Whisper (t) to where the speech after a pause begins.
+    Whisper tends to put a word's start inside the silence before it, so the right pause usually
+    ends just after t: take the first pause that ends from LATE seconds before t up to SNAP after.
+    (The nearest pause could be a breath before t, which starts the section early.)"""
+    ends = [e for s, e in ps if t - LATE <= e <= t + SNAP]
+    return min(ends) if ends else t
+
+
 def find(w, phrase, cur, window=500):
     """Index of the word where phrase starts, searching forward from cur, and the match score.
     Compares letters rather than words, so differences in how Whisper splits words don't matter."""
@@ -214,24 +224,29 @@ def find(w, phrase, cur, window=500):
         r = difflib.SequenceMatcher(None, target, cand[:len(target) + 3]).ratio()
         if r > best[0]:
             best = (r, i)
-        if r > 0.9:
+        # A start one word early can already score well ("1 di berkatila..." for "diberkatilah"),
+        # so look two words past a good match before settling on it.
+        if best[0] > 0.9 and i >= best[1] + 2:
             break
     return best[1], best[0]
 
 
-def align(name, bm, vo, anchors, bgm, out, model, vo_lang, bm_lang, label):
-    pairs = [[x.strip() for x in l.split("|")] for l in open(anchors, encoding="utf-8") if "|" in l]
+def listen(bm, vo, model, bm_lang, vo_lang):
+    """What align needs to know about both reads: Whisper word timings, pauses and lengths.
+    This is the slow part (Whisper and ffmpeg); plan() works from its result alone."""
     with tempfile.TemporaryDirectory() as tmp:
         print(f"transcribing the dub read ({bm_lang})...", flush=True)
         bw, bwav = words(bm, bm_lang, model, tmp)
         print(f"transcribing the source VO ({vo_lang})...", flush=True)
         vw, vwav = words(vo, vo_lang, model, tmp)
-        bp, vp = pauses(bwav, 0.12), pauses(vwav, 0.12)
-        gaps = [(s, e) for s, e in pauses(vwav, SONG_GAP) if s > 1]
+        return {"bw": bw, "vw": vw, "bp": pauses(bwav, 0.12), "vp": pauses(vwav, 0.12),
+                "gaps": [(s, e) for s, e in pauses(vwav, SONG_GAP) if s > 1],
+                "bend": dur(bm), "vend": dur(vo)}
 
-    def snap(t, ps):
-        near = [e for s, e in ps if abs(e - t) <= SNAP]
-        return min(near, key=lambda e: abs(e - t)) if near else t
+
+def plan(pairs, r):
+    """Sections [bm_start, bm_end, vo_start, vo_end] from anchor pairs and listen()'s result."""
+    bw, vw, bp, vp = r["bw"], r["vw"], r["bp"], r["vp"]
     # Speech starts: the end of the leading silence in each read.
     pts = [(bp[0][1] if bp and bp[0][0] < 0.05 else 0.0, vp[0][1] if vp and vp[0][0] < 0.05 else 0.0, "start")]
     cb = cv = 0
@@ -247,7 +262,7 @@ def align(name, bm, vo, anchors, bgm, out, model, vo_lang, bm_lang, label):
             print(f"  merged {b[:40]!r} into the section before it (same start)")
             continue
         pts.append((sb, sv, b))
-    bend, vend = dur(bm), dur(vo)
+    bend, vend = r["bend"], r["vend"]
 
     def sections():
         return [[b, pts[i + 1][0] if i + 1 < len(pts) else bend, v, pts[i + 1][1] if i + 1 < len(pts) else vend, n]
@@ -259,7 +274,7 @@ def align(name, bm, vo, anchors, bgm, out, model, vo_lang, bm_lang, label):
         print(f"  merged {pts[bad[0] + 1][2][:40]!r} into the section before it (too fast otherwise)")
         del pts[bad[0] + 1]
     segs = sections()
-    for s, e in gaps:
+    for s, e in r["gaps"]:
         for sec in segs:
             if sec[2] < s < sec[3]:
                 if sec[3] - e <= SNAP:
@@ -270,7 +285,16 @@ def align(name, bm, vo, anchors, bgm, out, model, vo_lang, bm_lang, label):
     # Leave a small gap so the padding around back-to-back sections doesn't push them late.
     for a, b in zip(segs, segs[1:]):
         a[1], a[3] = min(a[1], b[0] - 2 * PAD), min(a[3], b[2] - 2 * PAD)
-    job = {"bm": bm, "vo": vo, "out": out, "label": label, "segs": [[round(x, 3) for x in sec[:4]] for sec in segs]}
+    return [[round(x, 3) for x in sec[:4]] for sec in segs]
+
+
+def read_anchors(path):
+    return [[x.strip() for x in l.split("|")] for l in open(path, encoding="utf-8") if "|" in l]
+
+
+def align(name, bm, vo, anchors, bgm, out, model, vo_lang, bm_lang, label):
+    segs = plan(read_anchors(anchors), listen(bm, vo, model, bm_lang, vo_lang))
+    job = {"bm": bm, "vo": vo, "out": out, "label": label, "segs": segs}
     if bgm:
         job["bgm"] = bgm
     path = os.path.join(out, "jobs.json")

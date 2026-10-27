@@ -4,15 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dub-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Dub a voice-over into another language with an AI agent: TTS timed to the original speaker, one profile per client"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
 dependencies = ["tomli>=1.1; python_version < '3.11'"]
 
+[dependency-groups]
+dev = ["pytest>=8"]
+
 [project.scripts]
 dub = "dub.cli:main"
 
 [tool.setuptools]
 packages = ["dub"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

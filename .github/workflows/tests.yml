@@ -1,0 +1,21 @@
+# Run the tests on every push and pull request.
+# They need no audio, ffmpeg, Whisper or API keys (see tests/), so a plain runner is enough.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest supported Python (needs the tomli package) and a current one (built-in tomllib).
+        python: ["3.9", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Run the tests
+        run: uv run --python ${{ matrix.python }} pytest -v
