@@ -159,7 +159,8 @@ The first client is a Filipino church with members in Malaysia. Its worship and 
 **Results:**
 
 - **About a dozen scripts translated and voiced since early October 2026,** counted from the ElevenLabs history. The longest are full sermon scripts of 13,000–18,000 characters, roughly 15–20 minutes of Malay audio each.
-- **Time per script:** a 1–2 page script used to take about an hour, translating with Google Translate and then redoing the bold and highlights by hand. The agent now writes the translation, verses and formatting straight into the Google Doc, so the time that's left is reviewing.
+- **Time per script:** a 1–2 page script used to take about an hour just to translate, with Google Translate and then redoing the bold and highlights by hand; recording came on top. Now a full 16-minute sermon script (about 13,500 characters of Malay) goes from the Google Doc link to a finished, timed dub in under 25 minutes of agent time, measured from the session log. That run included fixing a timing bug in `dub` along the way. My review adds about 10–20 minutes, a light read of the Malay and a listen to the mix (an estimate, not yet timed). So the whole sermon takes about 35–45 minutes, against an hour for just translating a 1–2 page script before.
+- **Voice cost per script:** that sermon's read used 5,953 ElevenLabs credits for 13,529 characters, from the account's history. That's about $1.30 at the Creator plan's $22 for 100,000 credits, or roughly 8 cents per minute of Malay audio. The longest script (21 minutes, 18,448 characters) used 8,118 credits, about $1.80. The Claude subscription isn't counted.
 - **In use:** the dubs are played at the church's private gatherings.
 
 The church's own profile stays private. [`profiles/en-ms-bible/`](profiles/en-ms-bible/) is a public example of the same kind, used for the demo.
