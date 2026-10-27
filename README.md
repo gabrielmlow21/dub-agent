@@ -8,6 +8,8 @@ It works for any language pair that [Whisper](https://github.com/ggerganov/whisp
 
 It's used in production for Tagalog → Malaysian Malay church videos (see the [case study](#case-study-church-videos-into-malaysian-malay)).
 
+**Write-up:** [I taught an AI agent to dub sermons into Malay. The hardest bug was 1.6 seconds long.](https://medium.com/@gabrielmlow21/i-taught-an-ai-agent-to-dub-sermons-into-malay-the-hardest-bug-was-1-6-seconds-long-251d81fecfa8) How it works, the timing bug Whisper hid, and the test that keeps it fixed.
+
 ## Demo
 
 [![Before/after: Psalm 1 in English, then dubbed into Malay](demo/poster.png)](https://youtu.be/OWvdNPa1XdM)
