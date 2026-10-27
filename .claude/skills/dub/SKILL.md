@@ -35,16 +35,17 @@ Each anchor prints a line with its time in both reads and two match scores (dub,
 | You see | It usually means | Do this |
 |---|---|---|
 | `<-- check this one` (a score under 0.75) | The words weren't found as written: a typo, or Whisper heard them differently | Look at the transcript around that time with `dub analyze <audio> --lang <code>`, change the anchor to the words Whisper actually heard, and run `align` again |
-| `merged … (same start)` | Two anchors snapped to the same pause; often a heading straight before its first paragraph | Fine if they really are back to back. Otherwise the second anchor matched too early; make it more specific |
-| One `merged … (too fast otherwise)` | That section would need more than the profile's `max_tempo` speed-up | Fine on its own: it's joined to the section before |
+| `merged … (same start)` | Two anchors snapped to the same pause; often a heading straight before its first paragraph | Fine if they really are back to back. Otherwise the second anchor matched too early; make it more specific. Either way, list it in the report |
+| One `merged … (too fast otherwise)` | That section would need more than the profile's `max_tempo` speed-up | Fine on its own: it's joined to the section before, so that part of the dub has one sync point fewer. List it in the report |
 | Several `merged … (too fast)` in a row | An anchor before them landed on the wrong spot | Find it: its time jumps compared to its neighbours. Fix it and run `align` again |
+| `WARNING section … needs speeding up … past max_tempo` | The last section (nothing after it to merge with), or one cut short by a silence, is too long for its slot. `build` will cap its speed, so it runs long | Check that section's anchor and the one after it. If they're right, build anyway and report it with how long it runs over, so the user can decide whether to re-read it faster with `dub tts --speed` |
 | `WARNING a Ns silence … add an anchor right after it` | A song or clip in the original falls in the middle of a section | Add an anchor for the paragraph that starts after the silence |
 
-Re-run `align` until no anchor is flagged and any merges are explained. If the same anchor still fails after two attempts, leave it, build anyway, and say so in the report.
+Re-run `align` until no anchor is flagged and any merges are explained. Don't move or drop an anchor just to make a merge or warning go away: fix only anchors that matched the wrong words. If the same anchor still fails after two attempts, leave it, build anyway, and say so in the report.
 
 ## Checking the result
 
-- `build` prints each section's start and tempo. Note any section that `ends Ns early` (over ~1 s) and any `WARNING … overlaps`.
+- `build` prints each section's start and tempo. Note any section that `ends Ns early` (over ~1 s), any `WARNING capped at max_tempo` and any `WARNING … overlaps`.
 - Confirm the length and loudness line: the dub must be as long as the VO, and its loudness close to the VO's.
 - Spot-check the timing: transcribe the dub with `dub analyze <NAME>.<LABEL>.dub.wav --lang <target>` and compare a few section starts with the original's. They should be within about half a second.
 
@@ -53,7 +54,7 @@ Re-run `align` until no anchor is flagged and any merges are explained. If the s
 Keep it short, in this order:
 
 1. **Outputs:** the paths of `<NAME>.<LABEL>.dub.wav` and, with a BGM, `<NAME>.<LABEL>.mix.wav`.
-2. **Timing:** how many sections, any that end more than ~1 s early (the user may want those re-read slower with `dub tts --speed 0.7`–`1.2`), and any overlaps.
+2. **Timing:** how many sections; every merge, with its anchor and reason (same start or too fast); any section capped at `max_tempo` and how long it runs over; any that end more than ~1 s early (the user may want those re-read slower or faster with `dub tts --speed 0.7`–`1.2`); and any overlaps. Report these even when the dub sounds fine: each one is a trade-off the user should see.
 3. **Anything you fixed or couldn't fix:** anchors you changed and why, warnings left.
 4. **Proposed glossary entries,** if any, for the user to approve.
 

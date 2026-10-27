@@ -285,6 +285,12 @@ def plan(pairs, r):
     # Leave a small gap so the padding around back-to-back sections doesn't push them late.
     for a, b in zip(segs, segs[1:]):
         a[1], a[3] = min(a[1], b[0] - 2 * PAD), min(a[3], b[2] - 2 * PAD)
+    # The last section has nothing after it to merge with, and a silence can shorten any section:
+    # build caps those at max_tempo, so they run long.
+    for b, b2, v, v2, n in segs:
+        if v2 > v and (b2 - b) / (v2 - v) > MAX_T:
+            print(f"  WARNING section {n[:30]!r} needs speeding up {(b2 - b) / (v2 - v):.2f}x, past max_tempo "
+                  f"{MAX_T}: build will cap it and it will run {(b2 - b) / MAX_T - (v2 - v):.1f}s long")
     return [[round(x, 3) for x in sec[:4]] for sec in segs]
 
 
@@ -329,7 +335,8 @@ def build(name, job):
             cursor = max(cursor, ts) + dur(seg)
             early = (te - ts) - dur(seg)
             print(f"  {i + 1:2d} start {ts + PAD:6.2f} tempo {t:.3f}" +
-                  (f"  ends {early:.1f}s early" if early > 0.8 else ""))
+                  (f"  ends {early:.1f}s early" if early > 0.8 else "") +
+                  (f"  WARNING capped at max_tempo, runs {-early:.1f}s long" if early < -0.05 else ""))
         tail = os.path.join(tmp, "tail.wav")
         silence(tail, total - cursor)
         files.append(tail)

@@ -105,6 +105,43 @@ def test_snap_leaves_the_start_alone_with_no_pause_in_reach():
     assert cli.snap(20.0, [(10.0, 11.0), (25.0, 26.0)]) == 20.0
 
 
+# plan: what align says when a section doesn't fit
+
+def heard(dub_starts, dub_end, vo_starts, vo_end):
+    """listen()'s result for two anchors, "satu | one" and "tiga | three", with no pauses or gaps."""
+    (b1, b2), (v1, v2) = dub_starts, vo_starts
+    return {"bw": [(b1, b1 + 0.5, "satu"), (b2, b2 + 0.5, "tiga")],
+            "vw": [(v1, v1 + 0.5, "one"), (v2, v2 + 0.5, "three")],
+            "bp": [], "vp": [], "gaps": [], "bend": dub_end, "vend": vo_end}
+
+
+ANCHORS = [["Satu", "One"], ["Tiga", "Three"]]
+
+
+def test_plan_warns_when_the_last_section_needs_more_than_max_tempo(capsys):
+    # The last section is 10 s of dub for 5 s of original: 2x, with nothing after it to merge with.
+    segs = cli.plan(ANCHORS, heard((1, 5), 15, (1, 5), 10))
+    out = capsys.readouterr().out
+    assert len(segs) == 3
+    assert "WARNING section 'Tiga' needs speeding up 2.00x" in out
+    assert "run 3.0s long" in out
+
+
+def test_plan_reports_a_merge_instead_of_warning_when_there_is_a_next_section(capsys):
+    # The middle section is 11 s of dub for 4 s of original, so it's joined to the section before.
+    segs = cli.plan(ANCHORS, heard((1, 12), 15, (1, 5), 15))
+    out = capsys.readouterr().out
+    assert len(segs) == 2
+    assert "merged 'Tiga' into the section before it (too fast otherwise)" in out
+    assert "WARNING" not in out
+
+
+def test_plan_is_quiet_when_every_section_fits(capsys):
+    cli.plan(ANCHORS, heard((1, 5), 11, (1, 5), 10))
+    out = capsys.readouterr().out
+    assert "WARNING" not in out and "merged" not in out
+
+
 # load_profile: reading profile.toml
 
 @pytest.fixture
