@@ -10,9 +10,9 @@ It's used in production for Tagalog → Malaysian Malay church videos (see the [
 
 ## Demo
 
-[![Before/after: Psalm 1 in English, then dubbed into Malay](demo/poster.png)](demo/DEMO_PS1.before-after.mp4)
+[![Before/after: Psalm 1 in English, then dubbed into Malay](demo/poster.png)](https://youtu.be/OWvdNPa1XdM)
 
-**[Watch the before/after video (1:50)](demo/DEMO_PS1.before-after.mp4).** It plays Psalm 1 from a public-domain [LibriVox](https://archive.org/details/psalms_kjv_1202_librivox) King James reading, then the Malay dub made with the [`en-ms-bible`](profiles/en-ms-bible/) profile. The two waveforms are stacked so you can see each Malay verse start where the English one does.
+**[Watch the before/after video on YouTube (1:50)](https://youtu.be/OWvdNPa1XdM)**, or [download the mp4](demo/DEMO_PS1.before-after.mp4). It plays Psalm 1 from a public-domain [LibriVox](https://archive.org/details/psalms_kjv_1202_librivox) King James reading, then the Malay dub made with the [`en-ms-bible`](profiles/en-ms-bible/) profile. The two waveforms are stacked so you can see each Malay verse start where the English one does.
 
 How it was made, in one request to the agent:
 
