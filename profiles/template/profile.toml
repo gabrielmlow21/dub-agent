@@ -1,0 +1,10 @@
+# Copy this folder for each client or language pair, and keep real profiles private.
+source_lang = ""          # Whisper language code of the original voice, e.g. "en", "tl", "es"
+target_lang = ""          # Whisper language code of the dub, e.g. "ms", "id", "fr"
+# label     = ""          # output names: NAME.<label>.dub.wav; defaults to target_lang in capitals
+# voice     = ""          # ElevenLabs voice ID; or set ELEVENLABS_VOICE_ID in this folder's .env
+tts_model   = "eleven_multilingual_v2"
+# whisper_model = "/path/to/ggml-small.bin"
+# max_tempo = 1.25        # most a section may be sped up
+# min_tempo = 0.85        # most a section may be slowed down
+# song_gap  = 3.0         # a source silence this long stays silent in the dub

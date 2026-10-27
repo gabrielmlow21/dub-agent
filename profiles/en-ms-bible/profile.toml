@@ -1,0 +1,11 @@
+# English source, Malaysian Malay dub with Bible text from the AVB (the Psalm 1 demo).
+# Start a new profile from profiles/template/, and keep real profiles private.
+source_lang = "en"        # Whisper language of the source VO
+target_lang = "ms"        # Whisper language of the dub
+label       = "BM"        # output names: NAME.BM.dub.wav, NAME.BM.mix.wav
+# voice     = "..."       # ElevenLabs voice ID; or set ELEVENLABS_VOICE_ID in this folder's .env
+tts_model   = "eleven_multilingual_v2"
+# whisper_model = "/path/to/ggml-small.bin"
+# max_tempo = 1.25        # most a section may be sped up
+# min_tempo = 0.85        # most a section may be slowed down
+# song_gap  = 3.0         # a source silence this long stays silent in the dub
