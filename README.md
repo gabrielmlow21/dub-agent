@@ -80,7 +80,7 @@ brew install ffmpeg whisper-cpp uv
 Then install `dub`:
 
 ```bash
-uv tool install git+https://github.com/gabrielmlow21/dub-agent@v0.2.0
+uv tool install git+https://github.com/gabrielmlow21/dub-agent@v0.2.1
 ```
 
 To work on `dub` itself, install your local copy instead, so edits take effect straight away:

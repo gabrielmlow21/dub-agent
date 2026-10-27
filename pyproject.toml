@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dub-agent"
-version = "0.2.0"
+version = "0.2.1"
 description = "Dub a voice-over into another language with an AI agent: TTS timed to the original speaker, one profile per client"
 readme = "README.md"
 license = "MIT"
