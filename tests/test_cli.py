@@ -1,4 +1,5 @@
 """Tests for the parts of dub that don't need audio, ffmpeg or Whisper."""
+import json
 import os
 
 import pytest
@@ -176,6 +177,39 @@ def test_unknown_profile_keys_are_rejected(tmp_path, keep_limits):
     # Catches typos such as "voise" instead of silently ignoring them.
     with pytest.raises(SystemExit, match="unknown keys voise"):
         cli.load_profile(write_profile(tmp_path, 'voise = "abc"\n'))
+
+
+def test_profile_sets_the_voice_settings(tmp_path, keep_limits):
+    p = cli.load_profile(write_profile(tmp_path, '[voice_settings]\nstability = 0.25\nstyle = 0.45\n'))
+    assert p["voice_settings"] == {"stability": 0.25, "style": 0.45}
+
+
+def test_unknown_voice_settings_are_rejected(tmp_path, keep_limits):
+    with pytest.raises(SystemExit, match="unknown voice_settings stabilty"):
+        cli.load_profile(write_profile(tmp_path, '[voice_settings]\nstabilty = 0.25\n'))
+
+
+def test_tts_sends_the_voice_settings_with_speed(tmp_path, monkeypatch):
+    sent = []
+
+    class Reply:
+        def read(self):
+            return b""
+
+    def urlopen(req, timeout):
+        sent.append(json.loads(req.data))
+        return Reply()
+
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    monkeypatch.setattr(cli.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(cli, "ff", lambda args: None)
+    monkeypatch.setattr(cli, "dur", lambda f: 0.0)
+    text = tmp_path / "t.txt"
+    text.write_text("Satu.", encoding="utf-8")
+    cli.tts(str(text), str(tmp_path / "o.mp3"), "v", "m", 1.1, {"stability": 0.25})
+    assert sent[0]["voice_settings"] == {"stability": 0.25, "speed": 1.1}
+    cli.tts(str(text), str(tmp_path / "o.mp3"), "v", "m", 1.0, {})
+    assert "voice_settings" not in sent[1]
 
 
 def test_a_folder_without_profile_toml_is_rejected(tmp_path, keep_limits):

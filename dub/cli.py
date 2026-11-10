@@ -5,7 +5,8 @@ Needs ffmpeg, plus whisper-cpp and a ggml model for `analyze` and `align`
 https://huggingface.co/ggerganov/whisper.cpp, e.g. ggml-small.bin).
 
 Settings come from a profile folder (--profile DIR, or DUB_PROFILE), whose
-profile.toml names the languages, the voice and the output label; see
+profile.toml names the languages, the voice (and optionally its
+voice_settings) and the output label; see
 profiles/template/. The profile's .env (then the current folder's) holds
 ELEVENLABS_API_KEY. Command-line options win over the environment, which
 wins over the profile.
@@ -60,7 +61,8 @@ SONG_GAP = 3.0              # a source silence this long is kept silent in the d
 # profile.toml keys and their defaults
 PROFILE = {"source_lang": None, "target_lang": None, "label": None, "voice": None,
            "tts_model": "eleven_multilingual_v2", "whisper_model": "ggml-small.bin",
-           "min_tempo": MIN_T, "max_tempo": MAX_T, "song_gap": SONG_GAP}
+           "min_tempo": MIN_T, "max_tempo": MAX_T, "song_gap": SONG_GAP, "voice_settings": {}}
+VOICE_SETTINGS = {"stability", "similarity_boost", "style", "use_speaker_boost", "speed"}
 
 
 def ff(args):
@@ -109,6 +111,9 @@ def load_profile(folder):
         if unknown:
             raise SystemExit(f"{path}: unknown keys {', '.join(sorted(unknown))}")
         prof.update(data)
+        unknown = set(prof["voice_settings"]) - VOICE_SETTINGS
+        if unknown:
+            raise SystemExit(f"{path}: unknown voice_settings {', '.join(sorted(unknown))}")
     prof["label"] = prof["label"] or (prof["target_lang"] or "dub").upper()
     MIN_T, MAX_T, SONG_GAP = prof["min_tempo"], prof["max_tempo"], prof["song_gap"]
     return prof
@@ -125,7 +130,7 @@ def chunks(text):
     return out
 
 
-def tts(text_file, out, voice, model, speed):
+def tts(text_file, out, voice, model, speed, settings=None):
     key = os.environ.get("ELEVENLABS_API_KEY")
     if not key or not voice:
         raise SystemExit("set ELEVENLABS_API_KEY, and a voice in profile.toml, ELEVENLABS_VOICE_ID or --voice")
@@ -135,8 +140,11 @@ def tts(text_file, out, voice, model, speed):
         for i, part in enumerate(parts):
             # Without voice_settings ElevenLabs uses the voice's own saved settings.
             body = {"text": part, "model_id": model}
+            vs = dict(settings or {})
             if speed != 1.0:
-                body["voice_settings"] = {"speed": speed}
+                vs["speed"] = speed
+            if vs:
+                body["voice_settings"] = vs
             # Neighbouring text keeps the intonation continuous across chunks.
             if i > 0:
                 body["previous_text"] = parts[i - 1][-500:]
@@ -411,7 +419,8 @@ def main():
               src, tgt, prof["label"])
     elif args.cmd == "tts":
         voice = args.voice or env("ELEVENLABS_VOICE_ID") or prof["voice"]
-        tts(args.text, args.out, voice, args.model or env("ELEVENLABS_MODEL") or prof["tts_model"], args.speed)
+        tts(args.text, args.out, voice, args.model or env("ELEVENLABS_MODEL") or prof["tts_model"], args.speed,
+            prof["voice_settings"])
     elif args.cmd == "analyze":
         analyze(args.audio, args.lang, args.model or env("WHISPER_MODEL") or prof["whisper_model"])
     else:

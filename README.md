@@ -103,7 +103,7 @@ A profile is a folder, passed with `--profile DIR` (or the `DUB_PROFILE` environ
 
 | File | Read by | What it holds |
 |---|---|---|
-| `profile.toml` | `dub` | Languages, voice, output label, timing limits |
+| `profile.toml` | `dub` | Languages, voice and its settings, output label, timing limits |
 | `glossary.md` | the agent | Approved terms, built up script by script |
 | `style-guide.md` | the agent | Language variety, quoted text, how to write the voice text |
 | `CLAUDE.md` | the agent | The client's own rules, on top of the `dub` skill |
@@ -114,6 +114,12 @@ source_lang = "en"     # Whisper language code of the original voice
 target_lang = "ms"     # Whisper language code of the dub
 label       = "BM"     # output names: NAME.BM.dub.wav, NAME.BM.mix.wav
 voice       = "..."    # ElevenLabs voice ID
+
+[voice_settings]       # optional; without it the voice's saved settings are used
+stability         = 0.25   # lower is livelier but varies more from take to take
+similarity_boost  = 0.75
+style             = 0.45   # higher is more expressive, and slower
+use_speaker_boost = true
 ```
 
 Command-line options override the environment, which overrides the profile. Start a new profile by copying [`profiles/template/`](profiles/template/), and keep real clients' profiles in their own private repos.
